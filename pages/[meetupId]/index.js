@@ -1,48 +1,55 @@
+import { MongoClient, ObjectId } from "mongodb";
 import MeetupDetail from "../../components/meetups/MeetupDetail";
 
-const MeetupDetails = () => {
+const MeetupDetails = (props) => {
   return (
     <MeetupDetail
       image={
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbi_4-mbmDG3SOE8P5OleU7PiJWti7zypc2g&usqp=CAU"
+        props.meetupData.image
       }
-      title={"Meetup"}
-      address={"some address"}
-      description={"some description"}
+      title={props.meetupData.title}
+      address={props.meetupData.address}
+      description={props.meetupData.description}
     />
   );
 };
 
-export const getStaticPaths = async() => {
-    return {
-        fallback : false,
-        paths: [
-            {
-                params: {
-                    meetupId: 'm1',
-                }
-            },
-            {
-                params: {
-                    meetupId: 'm2',
-                }
-            }
-        ]
-    }
+export const getStaticPaths = async () => {
+  const client = await MongoClient.connect(
+    "mongodb+srv://BhanuPratap:8979465461India@cluster0.utzcfrg.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+
+  const meetupCollection = db.collection("meetups");
+
+  const meetups = await meetupCollection.find({}, { _id: 1 }).toArray();
+
+  return {
+    fallback: false,
+    paths: meetups.map((meetup) => ({ params: { meetupId: meetup._id } })),
+  };
 };
 
 export const getStaticProps = async (context) => {
   const meetupId = context.params.meetupId;
+  const client = await MongoClient.connect(
+    "mongodb+srv://BhanuPratap:8979465461India@cluster0.utzcfrg.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+
+  const meetupCollection = db.collection("meetups");
+
+  const selectedMeetup = await meetupCollection.findOne({_id: ObjectId(meetupId)});
+
   return {
     props: {
       meetupData: {
-        id: meetupId,
-        image:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbi_4-mbmDG3SOE8P5OleU7PiJWti7zypc2g&usqp=CAU",
-        title: "Meetup",
-        address: "some address",
-        description: "some description",
-      },
+        id: selectedMeetup._id.toString(),
+        title: selectedMeetup.title,
+        image: selectedMeetup.image,
+        description: selectedMeetup.description,
+        address: selectedMeetup.address
+      }
     },
   };
 };
