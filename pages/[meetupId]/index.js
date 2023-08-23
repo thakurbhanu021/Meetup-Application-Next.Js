@@ -4,9 +4,7 @@ import MeetupDetail from "../../components/meetups/MeetupDetail";
 const MeetupDetails = (props) => {
   return (
     <MeetupDetail
-      image={
-        props.meetupData.image
-      }
+      image={props.meetupData.image}
       title={props.meetupData.title}
       address={props.meetupData.address}
       description={props.meetupData.description}
@@ -24,9 +22,13 @@ export const getStaticPaths = async () => {
 
   const meetups = await meetupCollection.find({}, { _id: 1 }).toArray();
 
+  client.close();
+
   return {
     fallback: false,
-    paths: meetups.map((meetup) => ({ params: { meetupId: meetup._id } })),
+    paths: meetups.map((meetup) => ({
+      params: { meetupId: meetup._id.toString() },
+    })),
   };
 };
 
@@ -39,7 +41,11 @@ export const getStaticProps = async (context) => {
 
   const meetupCollection = db.collection("meetups");
 
-  const selectedMeetup = await meetupCollection.findOne({_id: ObjectId(meetupId)});
+  const selectedMeetup = await meetupCollection.findOne({
+    _id: new ObjectId(meetupId),
+  });
+
+  client.close();
 
   return {
     props: {
@@ -48,8 +54,8 @@ export const getStaticProps = async (context) => {
         title: selectedMeetup.title,
         image: selectedMeetup.image,
         description: selectedMeetup.description,
-        address: selectedMeetup.address
-      }
+        address: selectedMeetup.address,
+      },
     },
   };
 };
